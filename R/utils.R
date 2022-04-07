@@ -285,7 +285,7 @@ GSEAAnalyzer <- setRefClass("GSEAAnalyzer", fields = list(name = "character",
                               },
                               do_gsea = function(comparison) {
                                 convert_org_name()
-                                useEntrez <- name %in% c("msigdb", "kegg", "reactome")
+                                useEntrez <- name %in% c("msigdb", "wp", "kegg", "reactome")
                                 
                                 gsea_data <- makeGSEAData(input_dir, 
                                                           glue("DE_{comparison}.tsv"),

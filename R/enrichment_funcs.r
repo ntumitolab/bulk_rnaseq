@@ -4,8 +4,9 @@ library(clusterProfiler)
 library(ReactomePA)
 library(ggplot2)
 library(DOSE)
+library(msigdbr)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
 source("./utils.R")
 
 

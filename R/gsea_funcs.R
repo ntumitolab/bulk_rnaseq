@@ -4,8 +4,9 @@ library(clusterProfiler)
 library(ReactomePA)
 library(ggplot2)
 library(DOSE)
+library(msigdbr)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
 source("./utils.R")
 
 goGSEA <- setRefClass("goGSEA", contains = "GSEAAnalyzer",
@@ -31,8 +32,8 @@ keggGSEA <- setRefClass("keggGSEA", contains = "GSEAAnalyzer",
                       methods = list(
                         get_gsea_obj = function(subclass, gsea_data) {
                           clusterProfiler::gseKEGG(gsea_data, 
-                                                   usedDB, 
-                                                   keyType = "ENSEMBL", 
+                                                   organism = org_short, 
+                                                   keyType = "ncbi-geneid", 
                                                    pvalueCutoff=p_cutoff,
                                                    pAdjustMethod = adjust_method)
                         }
@@ -52,7 +53,7 @@ reactomeGSEA <- setRefClass("reactomeGSEA", contains = "GSEAAnalyzer",
 wpGSEA <- setRefClass("wpGSEA", contains = "GSEAAnalyzer",
                         methods = list(
                           get_gsea_obj = function(subclass, gsea_data) {
-                            clusterProfiler::gseaWP(gsea_data, 
+                            clusterProfiler::gseWP(gsea_data, 
                                                     organism = species, 
                                                     pvalueCutoff=p_cutoff,
                                                     pAdjustMethod = adjust_method)

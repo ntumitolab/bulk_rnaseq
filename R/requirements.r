@@ -1,12 +1,13 @@
 install.packages("ggplot2")
 install.packages("ggnewscale")
 install.packages("glue")
-install.packages("argparse")
+# install.packages("argparse")
 install.packages("readxl")
 install.packages("stringr")
 install.packages("enrichR")
 install.packages("msigdbr")
 install.packages("ggridges")
+install.packages("docopt")
 
 
 if (!require("BiocManager", quietly = TRUE))
