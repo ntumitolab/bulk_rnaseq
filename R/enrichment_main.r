@@ -43,7 +43,7 @@ main <- function(args){
                     type=db)
     }
   } else if (args$gsea) {
-    for (db in c("wp", "msigdb")) {
+    for (db in c("go", "kegg", "reactome", "wp", "msigdb")) {
       do_GSEA(comparisons, 
               input_dir=args$input, 
               output_dir=args$output,
