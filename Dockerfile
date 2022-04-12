@@ -12,6 +12,6 @@ RUN pip install -r requirements.txt
 
 COPY ./R/requirement.r /app/requirement.r
 
-RUN Rscript requirement.r
+RUN Rscript requirements.r
 
 # COPY . /app
