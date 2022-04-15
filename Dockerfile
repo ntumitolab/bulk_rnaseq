@@ -1,17 +1,17 @@
-FROM ubuntu:latest
+FROM python:3.8-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential r-base r-cran-randomforest python3.8 python3-pip python3-setuptools python3-dev
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential r-base r-cran-randomforest
 
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 
-COPY ./R/requirement.r /app/requirement.r
+RUN pip install -r requirements.txt
 
-RUN pip3 install -r requirements.txt
+COPY ./R/requirements.r /app/requirements.r
 
-RUN Rscript requirement.r
+RUN Rscript requirements.r
 
 # COPY . /app
