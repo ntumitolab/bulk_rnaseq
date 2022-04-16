@@ -10,7 +10,7 @@ exp_dirs <- c("down", "up",  "all")
 
 
 
-split_DE <- function (comparison, inDir, log2thres = log2(2), pvalthres = 0.1, method = "DESeq", isadjust = TRUE){
+split_DE <- function (comparison, inDir, log2thres = log2(2), pvalthres = 0.05, method = "DESeq", isadjust = TRUE){
   df <- read.table(file.path(inDir, glue("DE_{comparison}.tsv")), sep='\t')
   df <- df[complete.cases(df), ]
   upRegGenes <- df[(df$log2FoldChange >= log2thres)&(df$padj < pvalthres),]

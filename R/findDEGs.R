@@ -290,6 +290,9 @@ for (f in pca_factors){
   plotPCAc(vsdResult, condName = f, file.path(PLOT_RESULT_DIR, glue("PCA_counts_vst_{f}.jpeg")))
 }
 
+print("Using thresholds: ")
+print(glue("p-val < {as.numeric(args$pval)} and abs(logFC) > {as.numeric(args$logfc)}"))
+
 dds <- DESeq(dds)
 for (i in 1:length(comparisons))
 {
