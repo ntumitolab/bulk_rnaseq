@@ -2,7 +2,7 @@
 
 'Do enrichment analysis using raw count data
 Usage:
-    findDEGs.R (--enrich | --gsea) [--dePval=<dePval> --pval=<pval> --qval=<qval> --adjMethod=<adjMethod>] <input> <output>
+    enrichment_main.R (--enrich | --gsea) [--dePval=<dePval> --pval=<pval> --qval=<qval> --adjMethod=<adjMethod>] <input> <output>
     
 Options:
     -h --help  Show this screen.
