@@ -2,12 +2,13 @@
 
 'Do DE analysis using raw count data
 Usage:
-    findDEGs.R [--batch=<batch> --pval=<pval> --logfc=<logfc> --adjMethod=<adjMethod>] <input> <output> <metadata>
+    findDEGs.R [--batch=<batch> --treat=<treat> --pval=<pval> --logfc=<logfc> --adjMethod=<adjMethod>] <input> <output> <metadata>
     
 Options:
     -h --help  Show this screen.
     -v --version  Show version.
-    --batch=<batch>  To consider the batch information in the metadata if this gets the column name of batches [default: None]
+    --batch=<batch>  To consider the batch information in the metadata, assign the column name of batches [default: None]
+    --treat=<treat>  To consider the treat information in the metadata, assign the the column name of batches [default: None]
     --pval=<pval>  Width of the output [default: 0.05]
     --logfc=<logfc>  The absolute log2 fold change cutoff used to determine the DEGs [default: 1]
     --adjMethod=<adjMethod> The name of p-value adjusting method [default: BH]
@@ -34,14 +35,14 @@ suppressMessages(library(scales))
 
 GROUP_COLORS <- c("#3367c7", "#f08300", "#17b055", "#5e17b0", "#9c1f1f")
 
-read_data <- function(file_name){
+read_data <- function(file_name, header=T){
   loaded_data <- switch(file_ext(file_name),
-                        csv = read.csv(file_name, row.names = 1),
-                        tsv = read.delim(file_name, row.names = 1),
-                        xlsx = readxl::read_xlsx(file_name),
-                        xls = readxl::read_xls(file_name),
-                        txt = read.csv(file_name, row.names = 1, header = T, sep = "\t"),
-                        read.table(file_name, header = T, sep = ",")
+                        csv = read.csv(file_name, row.names = 1, header = header),
+                        tsv = read.delim(file_name, row.names = 1, header = header),
+                        xlsx = as.data.frame(readxl::read_xlsx(file_name)),
+                        xls = as.data.frame(readxl::read_xls(file_name)),
+                        txt = read.csv(file_name, row.names = 1, header = header, sep = "\t"),
+                        read.table(file_name, header = header, sep = ",")
   )
   return(loaded_data)
 }
@@ -55,18 +56,17 @@ handle_count_data <- function(filedir, verbose){
     }
     first.df <- T
     for (f in files){
-      new.df <- read.csv(file.path(filedir, f), header = T)
-      colnames(new.df) <- c('gene', tools::file_path_sans_ext(f))
+      new.df <- read_data(file.path(filedir, f), header = F)
+      colnames(new.df) <- c(tools::file_path_sans_ext(f))
       if (first.df){
         merged.df <- new.df
         first.df <- F
       } else {
-        merged.df <- merge(merged.df, new.df, by='gene', all=TRUE)
+        merged.df <- merge(merged.df, new.df, by=0, all=F)
+        rownames(merged.df)=merged.df$Row.names
+        merged.df <- subset(merged.df, select=-c(Row.names))
       }
     }
-    row.names(merged.df) <- merged.df[,1]
-    merged.df <- merged.df[,-c(1)]
-    
   } else {
     if (verbose) {
       print("Only one file is detected in the input folder")
@@ -261,23 +261,39 @@ metadata$group <- factor(metadata$group)
 
 if (args$batch != "None"){
   if (args$batch %in% colnames(metadata)){
-    metadata[, c(args$batch)] <- (metadata %>% select(args$batch) %>% mutate_all(factor))
+    metadata[, c(args$batch)] <- factor(metadata[, c(args$batch)])
     pca_factors <- append(pca_factors, args$batch)
-    design_formula <- paste(design_formula, args$batch, sep = "")
+    design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, args$batch, paste(" +", args$batch)), sep = "")
   } else {
     stop("The batch columns is not contained in the metadata")
   }
 }
 
-design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, "group", "+group"), sep = "")
+design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, "group", " + group"), sep = "")
+comparisons <- list(group=get_comparison(levels(metadata$group)))
 
-comparisons <- get_comparison(levels(metadata$group))
+if (args$treat != "None"){
+  if (args$treat %in% colnames(metadata)){
+    print("Adding treatment factor..")
+    metadata[, c(args$treat)] <- factor(metadata[, c(args$treat)])
+    pca_factors <- append(pca_factors, args$treat)
+    design_formula <- paste(design_formula, args$treat, sep = " + ")
+    design_formula <- paste(design_formula, paste(args$treat, "group", sep=":"), sep = " + ")
+    comparisons[[args$treat]] <- get_comparison(levels(metadata[, c(args$treat)]))
+  } else {
+    stop("The treat columns is not contained in the metadata")
+  }
+}
+
+print(paste("The design formula is:", design_formula))
+
 # outliers <- args$skip  # not implemented yet
 # metadata <- metadata[-match(outliers, metadata$sample),]
 # colnames(countsData) <- str_match(colnames(countsData), "(.*)A")[,2]
 # countsData <- countsData[, -match(outliers, colnames(countsData))]
 
 print("creating DESeqDataSet..")
+
 dds <- DESeqDataSetFromMatrix(counts_data[, metadata$sample], 
                               colData = metadata, 
                               design = as.formula(design_formula))
@@ -294,15 +310,19 @@ print("Using thresholds: ")
 print(glue("p-val < {as.numeric(args$pval)} and abs(logFC) > {as.numeric(args$logfc)}"))
 
 dds <- DESeq(dds)
-for (i in 1:length(comparisons))
-{
-  print(glue("{comparisons[[i]][1]} vs {comparisons[[i]][2]}"))
-  res <- results(dds, contrast = c("group", comparisons[[i]]), pAdjustMethod = args$adjMethod)
-  notna <- res[!is.na(res$padj), ]
-  notna <- notna[(abs(notna$log2FoldChange) > as.numeric(args$logfc)) & (notna$padj < as.numeric(args$pval)), ]
-  write.table(res, file.path(TABLE_RESULT_DIR, glue("DE_{comparisons[[i]][1]}_{comparisons[[i]][2]}.tsv")), sep = "\t", row.names = TRUE)
-  write.table(data.frame(DGE =row.names(notna)), file.path(TABLE_RESULT_DIR, glue("DEG_list_{comparisons[[i]][1]}_{comparisons[[i]][2]}.tsv")), sep = "\t", row.names = TRUE)
+
+for (cn in names(comparisons)){
+  for (i in 1:length(comparisons[[cn]]))
+  {
+    print(glue("{comparisons[[cn]][[i]][1]} vs {comparisons[[cn]][[i]][2]}"))
+    res <- results(dds, contrast = c(cn, comparisons[[cn]][[i]]), pAdjustMethod = args$adjMethod)
+    notna <- res[!is.na(res$padj), ]
+    notna <- notna[(abs(notna$log2FoldChange) > as.numeric(args$logfc)) & (notna$padj < as.numeric(args$pval)), ]
+    write.table(res, file.path(TABLE_RESULT_DIR, glue("DE_{comparisons[[cn]][[i]][1]}_{comparisons[[cn]][[i]][2]}.tsv")), sep = "\t", row.names = TRUE)
+    write.table(data.frame(DGE =row.names(notna)), file.path(TABLE_RESULT_DIR, glue("DEG_list_{comparisons[[cn]][[i]][1]}_{comparisons[[cn]][[i]][2]}.tsv")), sep = "\t", row.names = TRUE)
+  }
 }
+
 # 
 X <- "baseMean"
 Y <- "log2FoldChange"
@@ -312,11 +332,13 @@ YLABELS <- "log2 fold change"
 PLABELS <- "adjusted p-value"
 annotFilePath <- "./gene_data/gene_symbols.tsv"
 
-n <- sapply(comparisons, plotMAs, inDir=TABLE_RESULT_DIR, outDir=PLOT_RESULT_DIR,
+n <- sapply(do.call(list, unlist(comparisons, recursive = F, use.names = F)), 
+            plotMAs, inDir=TABLE_RESULT_DIR, outDir=PLOT_RESULT_DIR,
             x=X, y=Y, p=P,
             xlab=XLABELS, ylab=YLABELS, yThres=as.numeric(args$logfc), pThres=as.numeric(args$pval))
 
-n <- sapply(comparisons, plotVolcano,
+n <- sapply(do.call(list, unlist(comparisons, recursive = F, use.names = F)), 
+            plotVolcano,
             inDir=TABLE_RESULT_DIR, outDir=PLOT_RESULT_DIR,
             anotFn=annotFilePath,
             y=Y, p=P, xlab=YLABELS, ylab=PLABELS, yThres=as.numeric(args$logfc), pThres=as.numeric(args$pval))
