@@ -1,10 +1,10 @@
-library(glue)
-library(org.Hs.eg.db)
-library(clusterProfiler)
-library(ReactomePA)
-library(ggplot2)
-library(DOSE)
-library(msigdbr)
+suppressMessages(library(glue))
+suppressMessages(library(org.Hs.eg.db))
+suppressMessages(library(clusterProfiler))
+suppressMessages(library(ReactomePA))
+suppressMessages(library(ggplot2))
+suppressMessages(library(DOSE))
+suppressMessages(library(msigdbr))
 
 
 source("./utils.R")
@@ -22,11 +22,16 @@ goAnalyzer <- setRefClass("goAnalyzer", contains = "enrichAnalyzer",
                                                         readable = TRUE)
                             },
                             iter = function(comparison, ed, DEG.df) {
+                              if (is.null(ed)){
+                                    tbl_filename <- glue("{comparison}")
+                                  } else {
+                                    tbl_filename <- glue("{comparison}_{ed}")
+                                  }
                               sapply(GOsubontologies, 
                                      .self$get_table, 
                                      DEG.df=DEG.df,
                                      comparison=comparison,
-                                     tbl_filename=glue("{comparison}_{ed}"))
+                                     tbl_filename=tbl_filename)
                               
                             }
                           ))
@@ -47,9 +52,15 @@ keggAnalyzer <- setRefClass("keggAnalyzer", contains = "enrichAnalyzer",
                             
                             },
                             iter = function(comparison, ed, DEG.df) {
+                              if (is.null(ed)){
+                                    tbl_filename <- glue("{comparison}")
+                                  } else {
+                                    tbl_filename <- glue("{comparison}_{ed}")
+                                  }
+
                               .self$get_table(comparison=comparison,
                                               DEG.df=DEG.df,
-                                              tbl_filename=glue("{comparison}_{ed}"),
+                                              tbl_filename=tbl_filename,
                                               subclass=NULL)
                             }
                           ))
@@ -82,11 +93,16 @@ msigdbAnalyzer <- setRefClass("msigdbAnalyzer", contains = "enrichAnalyzer",
                                                             TERM2GENE=m_t2g)
                                 },
                                 iter = function(comparison, ed, DEG.df) {
+                                  if (is.null(ed)){
+                                    tbl_filename <- glue("{comparison}")
+                                  } else {
+                                    tbl_filename <- glue("{comparison}_{ed}")
+                                  }
                                   sapply(msigdbr_gs, 
                                          .self$get_table, 
                                          DEG.df=DEG.df,
                                          comparison=comparison,
-                                         tbl_filename=glue("{comparison}_{ed}"))
+                                         tbl_filename=tbl_filename)
                                   
                                 }
                               ))
@@ -130,6 +146,7 @@ enrich_analyzer <- list("go" = goAnalyzer,
 do_enrichment <- function(comparisons, 
                           input_dir, 
                           output_dir, 
+                          is_list = F,
                           type="go",
                           organism="human", 
                           adjust_method="BH",
@@ -139,14 +156,19 @@ do_enrichment <- function(comparisons,
     stop("The type is not valid")
   }
   
-  output_dir.tbl = file.path(output_dir, type, "tables")
-  output_dir.fig = file.path(output_dir, type, "plots")
-  
+  output_dir.tbl <- file.path(output_dir, type, "tables")
   ifelse(!dir.exists(output_dir.tbl), 
          dir.create(output_dir.tbl, recursive = T), FALSE)
-  ifelse(!dir.exists(output_dir.fig), 
+
+  if (!is_list){
+    output_dir.fig <- file.path(output_dir, type, "plots")
+    ifelse(!dir.exists(output_dir.fig), 
          dir.create(output_dir.fig, recursive = T), FALSE)
-  
+    
+  } else {
+    output_dir.fig <- NULL
+  }
+
   analyzer <- enrich_analyzer[[type]](name = type,
                                       organism = organism,
                                       input_dir = input_dir,
@@ -155,7 +177,12 @@ do_enrichment <- function(comparisons,
                                       q_cutoff = q_cutoff,
                                       p_cutoff = p_cutoff,
                                       adjust_method = adjust_method)
-  sapply(comparisons, analyzer$get_all_tables)
+
   
+  if (is_list){
+    sapply(comparisons, analyzer$get_all_tables_by_lists)
+  } else {
+    sapply(comparisons, analyzer$get_all_tables)
+  }
 }
 

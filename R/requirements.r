@@ -8,6 +8,7 @@ install.packages("enrichR")
 install.packages("msigdbr")
 install.packages("ggridges")
 install.packages("docopt")
+install.packages("rjson")
 
 
 if (!require("BiocManager", quietly = TRUE))

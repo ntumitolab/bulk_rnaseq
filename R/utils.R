@@ -1,7 +1,7 @@
-library(clusterProfiler)
-library(DOSE)
-library(enrichplot)
-library(org.Hs.eg.db)
+suppressMessages(library(clusterProfiler))
+suppressMessages(library(DOSE))
+suppressMessages(library(enrichplot))
+suppressMessages(library(org.Hs.eg.db))
 
 
 GOsubontologies <- c("ALL", "BP", "CC", "MF")
@@ -36,15 +36,22 @@ findGenes <- function(genes, usedDB){
   return(A)
 }
 
-makeDf <- function(fileName, usedDB, org_short="hsa", printInfo = T){
+makeDf <- function(fileName, usedDB, org_short="hsa", printInfo = T, gene_col = 0){
   DE_data <- read.table(fileName, sep='\t')
+  if (gene_col == 0){
+    d_genes <- row.names(DE_data)
+  } else {
+    d_genes <- DE_data[, gene_col]
+  }
+  
   if (org_short == "mmu"){
-    genes <- substr(row.names(DE_data), 1, 18)
+    genes <- substr(d_genes, 1, 18)
   } else if (org_short == "hsa") {
-    genes <- substr(row.names(DE_data), 1, 15)
+    genes <- substr(d_genes, 1, 15)
   }
   if(printInfo){
     print(glue("gene length: {length(genes)}"))
+    #print(genes)
   }
   DEG.df <- findGenes(genes, usedDB)
   if (is.null(DEG.df)) {
@@ -132,7 +139,7 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                                               organism = "character",
                                                               input_dir = "character",
                                                               output_dir = "character",
-                                                              output_dir.figs = "character",
+                                                              output_dir.figs = "ANY",
                                                               q_cutoff = "numeric",
                                                               p_cutoff = "numeric",
                                                               adjust_method = "character",
@@ -146,9 +153,14 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                   NULL
                                 },
                                 iter = function(comparison, ed, DEG.df, ...) {
+                                  if (is.null(ed)){
+                                    tbl_filename <- glue("{comparison}")
+                                  } else {
+                                    tbl_filename <- glue("{comparison}_{ed}")
+                                  }
                                   .self$get_table(comparison=comparison,
                                                   DEG.df=DEG.df,
-                                                  tbl_filename=glue("{comparison}_{ed}"),
+                                                  tbl_filename=tbl_filename,
                                                   subclass=NULL)
                                 },
                                 convert_org_name = function(){
@@ -201,12 +213,24 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                                                 glue("DEG_list_{comparison}_{ed}.tsv")),
                                                      usedDB = usedDB,
                                                      org_short = org_short)
-                                    if (is.null(DEG.df)) {
-                                      next
+                                    if (!is.null(DEG.df)) {
+                                      iter(comparison=comparison, ed=ed, DEG.df=DEG.df)
                                     }
-                                    iter(comparison=comparison, ed=ed, DEG.df=DEG.df)
                                   }
-                                }))
+                                },
+                                
+                                get_all_tables_by_lists = function(file_name) {
+                                  convert_org_name()
+                                  DEG.df <- makeDf(file.path(input_dir, file_name),
+                                                   usedDB = usedDB,
+                                                   gene_col=1,
+                                                   org_short = org_short)
+                                  if (!is.null(DEG.df)) {
+                                    iter(comparison=file_name, ed=NULL, DEG.df=DEG.df)
+                                  }
+                                }
+                                
+                                ))
 
 GSEAAnalyzer <- setRefClass("GSEAAnalyzer", fields = list(name = "character",
                                                           organism = "character",

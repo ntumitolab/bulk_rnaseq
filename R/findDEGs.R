@@ -2,7 +2,7 @@
 
 'Do DE analysis using raw count data
 Usage:
-    findDEGs.R [--batch=<batch> --treat=<treat> --pval=<pval> --logfc=<logfc> --adjMethod=<adjMethod>] <input> <output> <metadata>
+    findDEGs.R [--batch=<batch> --treat=<treat> --design=<design> --pval=<pval> --logfc=<logfc> --adjMethod=<adjMethod>] <input> <output> <metadata>
     
 Options:
     -h --help  Show this screen.
@@ -12,6 +12,7 @@ Options:
     --pval=<pval>  Width of the output [default: 0.05]
     --logfc=<logfc>  The absolute log2 fold change cutoff used to determine the DEGs [default: 1]
     --adjMethod=<adjMethod> The name of p-value adjusting method [default: BH]
+    --design=<design>  The design file of the experiment. If the design is assigned then the batch and the treat args will be ignored [default: None]
 
 Arguments:
     input  input folder storing raw count data
@@ -31,6 +32,7 @@ suppressMessages(library(stringr))
 suppressMessages(library(tools))
 suppressMessages(library(readxl))
 suppressMessages(library(scales))
+suppressMessages(library(rjson))
 
 
 GROUP_COLORS <- c("#3367c7", "#f08300", "#17b055", "#5e17b0", "#9c1f1f")
@@ -254,38 +256,52 @@ print(args$metadata)
 metadata <- read_data(args$metadata)
 print("metadata loaded")
 
-pca_factors <- c("group")
-design_formula <- "~"
 
-metadata$group <- factor(metadata$group)
 
-if (args$batch != "None"){
-  if (args$batch %in% colnames(metadata)){
-    metadata[, c(args$batch)] <- factor(metadata[, c(args$batch)])
-    pca_factors <- append(pca_factors, args$batch)
-    design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, args$batch, paste(" +", args$batch)), sep = "")
-  } else {
-    stop("The batch columns is not contained in the metadata")
+if (args$design != "None"){
+  json_data <- rjson::fromJSON(file=args$design)
+  print("found and loaded design file")
+  design_formula <- json_data[["design"]]
+  pca_factors <- json_data[["to_compare"]]
+  comparisons <- list()
+  for (f in json_data[["factors"]]) {
+    metadata[, c(f)] <- factor(metadata[, c(f)])
+  }
+  for (tc in json_data[["to_compare"]]) {
+    comparisons[[tc]] <- get_comparison(levels(metadata[, c(tc)]))
+  }
+  print(paste("The design formula is:", design_formula))
+} else {
+  pca_factors <- c("group")
+  design_formula <- "~"
+  metadata$group <- factor(metadata$group)
+
+  if (args$batch != "None"){
+    if (args$batch %in% colnames(metadata)){
+      metadata[, c(args$batch)] <- factor(metadata[, c(args$batch)])
+      pca_factors <- append(pca_factors, args$batch)
+      design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, args$batch, paste(" +", args$batch)), sep = "")
+    } else {
+      stop("The batch columns is not contained in the metadata")
+    }
+  }
+
+  design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, "group", " + group"), sep = "")
+  comparisons <- list(group=get_comparison(levels(metadata$group)))
+
+  if (args$treat != "None"){
+    if (args$treat %in% colnames(metadata)){
+      print("Adding treatment factor..")
+      metadata[, c(args$treat)] <- factor(metadata[, c(args$treat)])
+      pca_factors <- append(pca_factors, args$treat)
+      design_formula <- paste(design_formula, args$treat, sep = " + ")
+      design_formula <- paste(design_formula, paste(args$treat, "group", sep=":"), sep = " + ")
+      comparisons[[args$treat]] <- get_comparison(levels(metadata[, c(args$treat)]))
+    } else {
+      stop("The treat columns is not contained in the metadata")
+    }
   }
 }
-
-design_formula <- paste(design_formula, ifelse(nchar(design_formula) <= 1, "group", " + group"), sep = "")
-comparisons <- list(group=get_comparison(levels(metadata$group)))
-
-if (args$treat != "None"){
-  if (args$treat %in% colnames(metadata)){
-    print("Adding treatment factor..")
-    metadata[, c(args$treat)] <- factor(metadata[, c(args$treat)])
-    pca_factors <- append(pca_factors, args$treat)
-    design_formula <- paste(design_formula, args$treat, sep = " + ")
-    design_formula <- paste(design_formula, paste(args$treat, "group", sep=":"), sep = " + ")
-    comparisons[[args$treat]] <- get_comparison(levels(metadata[, c(args$treat)]))
-  } else {
-    stop("The treat columns is not contained in the metadata")
-  }
-}
-
-print(paste("The design formula is:", design_formula))
 
 # outliers <- args$skip  # not implemented yet
 # metadata <- metadata[-match(outliers, metadata$sample),]
