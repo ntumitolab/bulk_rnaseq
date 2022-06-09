@@ -13,7 +13,7 @@ goGSEA <- setRefClass("goGSEA", contains = "GSEAAnalyzer",
                           methods = list(
                             get_gsea_obj = function(subclass, gsea_data) {
                               clusterProfiler::gseGO(gsea_data, 
-                                                     usedDB, 
+                                                     OrgDb = orgDB, 
                                                      keyType = "ENSEMBL", 
                                                      ont=subclass, 
                                                      pvalueCutoff=p_cutoff,
