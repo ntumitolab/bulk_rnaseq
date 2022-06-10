@@ -9,6 +9,11 @@ install.packages("msigdbr")
 install.packages("ggridges")
 install.packages("docopt")
 install.packages("rjson")
+install.packages("WGCNA")
+
+# optional
+install.packages('ggfortify')
+
 
 
 if (!require("BiocManager", quietly = TRUE))
@@ -19,4 +24,9 @@ BiocManager::install("clusterProfiler")
 BiocManager::install("org.Hs.eg.db")
 BiocManager::install("DESeq2")
 BiocManager::install("enrichplot")
+
+# optional (batch effect removal)
+BiocManager::install("sva")
+BiocManager::install("RUVSeq")
+
 
