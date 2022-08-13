@@ -175,9 +175,15 @@ plotVolcano <- function(comp, inDir, outDir, anotFn, y, p, xlab, ylab, yThres=lo
   t <- read.table(file.path(inDir, glue("DE_{comp[1]}_{comp[2]}.tsv")), sep='\t', header=1)
   if (dim(str_match(row.names(t), "(.*)\\..*"))[1] >= 2){
     t["Gene"] <- str_match(row.names(t), "(.*)\\..*")[,2]  # strip the version id
+  } else {
+    t["Gene"] <- row.names(t)
   }
   annot <- read.table(anotFn, sep='\t', header=1)
   t <- t[complete.cases(t),]
+  if (dim(t) == 0){
+    warning("input dataframe for volcano plot cannot match any gene id")
+    return()
+  }
   t$de <- 0
   t$de[(t[, y] > yThres)&(t[, p] < pThres)] <- 1
   t$de[(t[, y] < (-yThres))&(t[, p] < pThres)] <- (-1)
