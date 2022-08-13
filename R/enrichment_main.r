@@ -24,10 +24,10 @@ Arguments:
 # should use valid gene id here
 suppressMessages(library(docopt))
 suppressMessages(library(stringr))
+suppressMessages(library(here))
 
-
-source("./enrichment_funcs.r")
-source("./gsea_funcs.r")
+source(here("./enrichment_funcs.r"))
+source(here("./gsea_funcs.r"))
 
 args <- docopt(doc)
 

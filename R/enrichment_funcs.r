@@ -5,9 +5,9 @@ suppressMessages(library(ReactomePA))
 suppressMessages(library(ggplot2))
 suppressMessages(library(DOSE))
 suppressMessages(library(msigdbr))
+suppressMessages(library(here))
 
-
-source("./utils.R")
+source(here("./utils.R"))
 
 
 goAnalyzer <- setRefClass("goAnalyzer", contains = "enrichAnalyzer",

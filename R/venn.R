@@ -1,7 +1,7 @@
 library(VennDiagram)
 library(RColorBrewer)
 library(tools)
-
+library(here)
 
 
 loadSets <- function(file_dir) {
@@ -11,13 +11,14 @@ loadSets <- function(file_dir) {
   for (f in files) {
     set_list[[tools::file_path_sans_ext(f)]] <- read.csv(file.path(file_dir, f), header = F)[, 1]
   }
-  set_listㄛ
+  set_list
 }
 
 drawVenn <- function(file_dir, out_file_name) {
   set_list <- loadSets(file_dir)
-  myCol <- brewer.pal(length(set_list), "Pastel2")
+  myCol <- brewer.pal(length(set_list), "Pastel2")[seq(1, length(set_list))]
   
+  print(paste(length(set_list), " detected"))
   nameAdj <- switch(length(set_list),
                     NULL,
                     list(c(0, 0), c(0, 0)),
@@ -68,21 +69,22 @@ drawVenn <- function(file_dir, out_file_name) {
   )
 }
 
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/ipsc_ups", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/ipsc_up_venn.png")
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/ipsc_downs", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/ipsc_down_venn.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/CC/down", 
+         "../../DOX/results/1_degs/deg_venn/venn/CC/down.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/CC/up", 
+         "../../DOX/results/1_degs/deg_venn/venn/CC/up.png")
 
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/cell_type_ups", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/cell_type_ups_venn.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/CO/down", 
+         "../../DOX/results/1_degs/deg_venn/venn/CO/down.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/CO/up", 
+         "../../DOX/results/1_degs/deg_venn/venn/CO/up.png")
 
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/cell_type_downs", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/cell_type_downs_venn.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/MC/down", 
+         "../../DOX/results/1_degs/deg_venn/venn/MC/down.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/MC/up", 
+         "../../DOX/results/1_degs/deg_venn/venn/MC/up.png")
 
-
-
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/dosage_ups", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/dosage_ups_venn.png")
-
-drawVenn("../../OneDrive/桌面/Research/DOX/degs/dosage_downs", 
-         "../../OneDrive/桌面/Research/DOX/results/venn/dosage_downs_venn.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/HT/down", 
+         "../../DOX/results/1_degs/deg_venn/venn/HT/down.png")
+drawVenn("../../DOX/results/1_degs/deg_venn/data/HT/up", 
+         "../../DOX/results/1_degs/deg_venn/venn/HT/up.png")

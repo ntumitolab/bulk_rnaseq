@@ -7,3 +7,5 @@ data/
 results/
 __pycache__/
 usages/
+.Rproj.user
+example/

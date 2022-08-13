@@ -34,7 +34,6 @@ suppressMessages(library(readxl))
 suppressMessages(library(scales))
 suppressMessages(library(rjson))
 
-
 GROUP_COLORS <- c("#3367c7", "#f08300", "#17b055", "#5e17b0", "#9c1f1f")
 
 read_data <- function(file_name, header=T){

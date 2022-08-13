@@ -5,9 +5,9 @@ library(ReactomePA)
 library(ggplot2)
 library(DOSE)
 library(msigdbr)
+library(here)
 
-
-source("./utils.R")
+source(here("./utils.R"))
 
 goGSEA <- setRefClass("goGSEA", contains = "GSEAAnalyzer",
                           methods = list(

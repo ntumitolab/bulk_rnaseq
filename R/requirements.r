@@ -9,16 +9,23 @@ install.packages("msigdbr")
 install.packages("ggridges")
 install.packages("docopt")
 install.packages("rjson")
-install.packages("WGCNA")
+install.packages("here")
 
+BiocManager::install("impute")
+install.packages("WGCNA")
+install.packages(c("impute","dynamicTreeCut","qvalue","flashClust","Hmisc"))
+
+
+
+BiocManager::install("vctrs")
 # optional
 install.packages('ggfortify')
-
 
 
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
+BiocManager::install("preprocessCore")
 BiocManager::install("ReactomePA")
 BiocManager::install("clusterProfiler")
 BiocManager::install("org.Hs.eg.db")
@@ -29,4 +36,5 @@ BiocManager::install("enrichplot")
 BiocManager::install("sva")
 BiocManager::install("RUVSeq")
 
+install.packages("metaRNASeq")
 
