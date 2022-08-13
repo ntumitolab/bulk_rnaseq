@@ -173,7 +173,7 @@ reverselog_trans <- function(base = exp(1)) {
 plotVolcano <- function(comp, inDir, outDir, anotFn, y, p, xlab, ylab, yThres=log2(1.5), pThres=0.1, pSig=1e-15){
   print(file.path(inDir, glue("DE_{comp[1]}_{comp[2]}.tsv")))
   t <- read.table(file.path(inDir, glue("DE_{comp[1]}_{comp[2]}.tsv")), sep='\t', header=1)
-  if (dim(str_match(row.names(t), "(.*)\\..*")) >= 2){
+  if (dim(str_match(row.names(t), "(.*)\\..*"))[1] >= 2){
     t["Gene"] <- str_match(row.names(t), "(.*)\\..*")[,2]  # strip the version id
   }
   annot <- read.table(anotFn, sep='\t', header=1)
