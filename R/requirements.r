@@ -11,6 +11,9 @@ install.packages("docopt")
 install.packages("rjson")
 install.packages("here")
 
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
 BiocManager::install("impute")
 install.packages("WGCNA")
 install.packages(c("impute","dynamicTreeCut","qvalue","flashClust","Hmisc"))
@@ -20,10 +23,6 @@ install.packages(c("impute","dynamicTreeCut","qvalue","flashClust","Hmisc"))
 BiocManager::install("vctrs")
 # optional
 install.packages('ggfortify')
-
-
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
 
 BiocManager::install("preprocessCore")
 BiocManager::install("ReactomePA")
