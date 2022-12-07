@@ -10,14 +10,18 @@ exp_dirs <- c("down", "up",  "all")
 
 
 
-split_DE <- function (comparison, inDir, log2thres = log2(2), pvalthres = 0.05, method = "DESeq", isadjust = TRUE){
-  df <- read.table(file.path(inDir, glue("DE_{comparison}.tsv")), sep='\t')
-  df <- df[complete.cases(df), ]
-  upRegGenes <- df[(df$log2FoldChange >= log2thres)&(df$padj < pvalthres),]
+split_DE <- function (comparison, inDir, log2thres = 1, pvalthres = 0.05, method = "DESeq", isadjust = TRUE){
+  print(glue("Separating DEGs, padj = {pvalthres}, log2FC = {log2thres}"))
+  print(glue("Loading {comparison} from {inDir}"))
+  df <- read.csv(file.path(inDir, glue("DE_{comparison}.tsv")), sep='\t', row.names = 1)
+  cdf <- df[complete.cases(df), ]
+  upRegGenes <- cdf[cdf$log2FoldChange >= log2thres,]
+  upRegGenes <- upRegGenes[upRegGenes$padj < pvalthres,]
   upRegGenes <- upRegGenes[complete.cases(upRegGenes), ]
-  downRegGenes <- df[(df$log2FoldChange <= -log2thres)&(df$padj < pvalthres),]
+  downRegGenes <- cdf[cdf$padj < pvalthres,]
+  downRegGenes <- downRegGenes[downRegGenes$log2FoldChange <= -log2thres,]
   downRegGenes <- downRegGenes[complete.cases(downRegGenes), ]
-  allRegGenes <- df[(abs(df$log2FoldChange) >= log2thres)&(df$padj < pvalthres),]
+  allRegGenes <- cdf[(abs(cdf$log2FoldChange) >= log2thres)&(cdf$padj < pvalthres),]
   allRegGenes <- allRegGenes[complete.cases(allRegGenes), ]
   write.table(upRegGenes, file.path(inDir, glue("DEG_list_{comparison}_up.tsv")), sep='\t', row.names = T)
   write.table(downRegGenes, file.path(inDir, glue("DEG_list_{comparison}_down.tsv")), sep='\t', row.names = T)
@@ -25,9 +29,9 @@ split_DE <- function (comparison, inDir, log2thres = log2(2), pvalthres = 0.05, 
 }
 
 
-findGenes <- function(genes, usedDB){
+findGenes <- function(genes, usedDB, fromType="ENSEMBL"){
   A <- tryCatch({
-    return(bitr(genes, fromType="ENSEMBL", toType=c("ENSEMBL", "ENTREZID"), OrgDb=usedDB))
+    return(bitr(genes, fromType=fromType, toType=c(fromType, "ENTREZID"), OrgDb=usedDB))
   }, error = function(e) {
     print(e)
     return(NULL)
@@ -36,7 +40,7 @@ findGenes <- function(genes, usedDB){
   return(A)
 }
 
-makeDf <- function(fileName, usedDB, org_short="hsa", printInfo = T, gene_col = 0){
+makeDf <- function(fileName, usedDB, org_short="hsa", printInfo = T, gene_col = 0, fromType="ENSEMBL"){
   DE_data <- read.table(fileName, sep='\t')
   if (gene_col == 0){
     d_genes <- row.names(DE_data)
@@ -51,9 +55,8 @@ makeDf <- function(fileName, usedDB, org_short="hsa", printInfo = T, gene_col = 
   }
   if(printInfo){
     print(glue("gene length: {length(genes)}"))
-    #print(genes)
   }
-  DEG.df <- findGenes(genes, usedDB)
+  DEG.df <- findGenes(genes, usedDB, fromType=fromType)
   if (is.null(DEG.df)) {
     if(printInfo){
       print("No deg.df")
@@ -103,7 +106,9 @@ drawEnrichMaps <- function(enrichment, geneList, fileName, outDirFigs, orgDb, on
 
 ### GSEA ###
 makeGSEAData <- function(inDir, fileName, org_short="hsa", useEntrez=F){
-  df <- read.table(file.path(inDir, fileName), sep='\t')
+  df <- read.csv(file.path(inDir, fileName), sep='\t', row.names = 1)
+  print("Data loaded, dim: ")
+  print(dim(df))
   if (org_short == "mmu"){
     genes <- substr(row.names(df), 1, 18)
   } else if (org_short == "hsa") {
@@ -146,7 +151,8 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                                               usedDB = "character",
                                                               org_short = "character",
                                                               species = "character", 
-                                                              orgDB = "ANY"),
+                                                              orgDB = "ANY",
+                                                              geneNameType = "ANY"),
                               
                               methods = list(
                                 get_enrich_obj = function(...) {
@@ -212,7 +218,8 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                     DEG.df <- makeDf(file.path(input_dir, 
                                                                 glue("DEG_list_{comparison}_{ed}.tsv")),
                                                      usedDB = usedDB,
-                                                     org_short = org_short)
+                                                     org_short = org_short,
+                                                     fromType = geneNameType)
                                     if (!is.null(DEG.df)) {
                                       iter(comparison=comparison, ed=ed, DEG.df=DEG.df)
                                     }
@@ -224,7 +231,8 @@ enrichAnalyzer <- setRefClass("enrichAnalyzer", fields = list(name = "character"
                                   DEG.df <- makeDf(file.path(input_dir, file_name),
                                                    usedDB = usedDB,
                                                    gene_col=1,
-                                                   org_short = org_short)
+                                                   org_short = org_short,
+                                                   fromType = geneNameType)
                                   if (!is.null(DEG.df)) {
                                     iter(comparison=file_name, ed=NULL, DEG.df=DEG.df)
                                   }

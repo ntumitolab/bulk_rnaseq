@@ -2,18 +2,20 @@
 
 'Do enrichment analysis using raw count data
 Usage:
-    enrichment_main.R (--enrich | --gsea) [--dePval=<dePval> --pval=<pval> --qval=<qval> --adjMethod=<adjMethod> --list] <input> <output>
+    enrichment_main.R (--enrich | --gsea) [--plot --list --dePval=<dePval> --pval=<pval> --qval=<qval> --adjMethod=<adjMethod> --geneName=<geneName>] <input> <output>
     
 Options:
     -h --help  Show this screen.
     -v --version  Show version.
+    --plot  Plot enrich results
     --enrich  Perform enrichment analysis
     --gsea  Perform GSEA
     --list  If specified, the input data is treated as a list of genes, otherwise it will be treated as a DEG table
     --dePval=<dePval>  The p-value used to select DEGs [default: 0.05]
     --pval=<pval>  The p-value cutoff used to run the analysis [default: 0.05]
     --qval=<qval>  The q-value cutoff used to run the analysis [default: 0.2]
-    --adjMethod=<adjMethod> The name of p-value adjusting method [default: BH]
+    --adjMethod=<adjMethod>  The name of p-value adjusting method [default: BH]
+    --geneName=<geneName>  Type of gene name [default: ENSEMBL]
 
 Arguments:
     input  inpur folder storing DEG results
@@ -39,21 +41,23 @@ main <- function(args){
   } else {
     print("Using DEG table files")
     comparisons <- gsub("^DE_|.tsv", "", grep("^DE_", list.files(path = args$input), value = TRUE))
-    sapply(comparisons, split_DE, inDir=args$input, pvalthres=args$dePval)
+    sapply(comparisons, split_DE, inDir=args$input, pvalthres=as.numeric(args$dePval))
   }
   if (args$enrich) {
-    for (db in c("go", "kegg", "reactome", "wp", "msigdb")) {
+    for (db in c("go", "kegg", "reactome")) {
       do_enrichment(comparisons, 
                     input_dir=args$input, 
                     output_dir=args$output,
                     is_list=args$list,
+                    do_plot=args$plot,
                     adjust_method=args$adjMethod,
                     p_cutoff=as.numeric(args$pval),
                     q_cutoff=as.numeric(args$qval),
-                    type=db)
+                    type=db,
+                    gene_name_type=args$geneName)
     }
   } else if (args$gsea) {
-    for (db in c("go", "kegg", "reactome", "wp", "msigdb")) {
+    for (db in c("go", "kegg", "reactome")) {
       do_GSEA(comparisons, 
               input_dir=args$input, 
               output_dir=args$output,

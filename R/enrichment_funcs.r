@@ -147,11 +147,13 @@ do_enrichment <- function(comparisons,
                           input_dir, 
                           output_dir, 
                           is_list = F,
+                          do_plot = F,
                           type="go",
                           organism="human", 
                           adjust_method="BH",
                           p_cutoff=0.05, 
-                          q_cutoff=0.2) {
+                          q_cutoff=0.2,
+                          gene_name_type="ENSEMBL") {
   if (is.null(enrich_analyzer[[type]])){
     stop("The type is not valid")
   }
@@ -160,7 +162,7 @@ do_enrichment <- function(comparisons,
   ifelse(!dir.exists(output_dir.tbl), 
          dir.create(output_dir.tbl, recursive = T), FALSE)
 
-  if (!is_list){
+  if (!is_list && do_plot){
     output_dir.fig <- file.path(output_dir, type, "plots")
     ifelse(!dir.exists(output_dir.fig), 
          dir.create(output_dir.fig, recursive = T), FALSE)
@@ -176,7 +178,8 @@ do_enrichment <- function(comparisons,
                                       output_dir.figs = output_dir.fig,
                                       q_cutoff = q_cutoff,
                                       p_cutoff = p_cutoff,
-                                      adjust_method = adjust_method)
+                                      adjust_method = adjust_method,
+                                      geneNameType=gene_name_type)  # SYMBOL, GENENAME, etc.
 
   
   if (is_list){
