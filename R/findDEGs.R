@@ -322,6 +322,8 @@ dds <- DESeqDataSetFromMatrix(counts_data[, metadata$sample],
 
 vsd <- vst(dds)
 
+write.csv(order(rowVars(assay(rld)),decreasing=TRUE), file.path(TABLE_RESULT_DIR, "topVar.csv"))
+
 for (f in pca_factors){
   print(glue("plotting PCA plot for factor: {f}"))
   vsdResult <- plotPCA(vsd, intgroup=c(f), returnData=T)
