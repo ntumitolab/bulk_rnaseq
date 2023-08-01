@@ -1,5 +1,6 @@
 install.packages("remotes")
 install.packages("VennDiagram")
+install.packages("rmeta")
 
 remotes::install_github('alexvpickering/crossmeta')
 
