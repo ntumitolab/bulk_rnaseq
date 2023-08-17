@@ -1,7 +1,7 @@
 cobra~=0.26.0
 pandas~=1.2.0
 numpy>=1.21
-scipy~=1.6.0
+scipy~=1.11.2
 matplotlib~=3.6.2
 scikit-learn~=0.24.0
 scikit-posthocs~=0.6.6
